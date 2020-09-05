@@ -40,6 +40,9 @@ void loop() {
         tempo_inicial = millis();
         if (status_chuva()){
             fecha_janela();
+            tempo_verificacao = 300000; //altera o tempo de vefificação para 5 minutos caso esteja chevendo
+        }else{
+            tempo_verificacao = 60000; //mantem o tempo de verificação em 1 minuto caso não esteja chevendo
         }
     } 
 }
