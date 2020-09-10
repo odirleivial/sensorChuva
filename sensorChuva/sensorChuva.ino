@@ -8,13 +8,14 @@ Descrição: Projeto com um sensor de chuva e um transmissor de rádio frequênc
 
 #define pin_bt 7 // Botão
 #define pin_led 13 // Led
-#define pinChuva 3 //Pino do sensor de chuva 
+#define pinChuva 9 //Pino do sensor de chuva 
+//#define DEBUG 1
 
 #include <RCSwitch.h>
 RCSwitch RF433Send = RCSwitch(); // ligar o transmissor de RF no pino 10
 
 int count_chuva = 0;
-long tempo_verificacao =  10000; //tempo em ms para fazer a verificação se está chevendo e mandar o comando de fechar a janela
+long tempo_verificacao =  1000; //tempo em ms para fazer a verificação se está chevendo e mandar o comando de fechar a janela
 long tempo_normal = 1000; //60000
 long tempo_chuva = 1000; //300000
 long tempo_inicial = millis();
@@ -35,6 +36,13 @@ void setup() {
 void loop() {
   //verifica se atigiu o tempo definido na variável tempo_verificacao, 
   // se o tempo foi atingido envia o sinal para fechar a janela através da função fecha_janela()
+    #ifdef DEBUG
+      Serial.println("\n-----------------------------------");
+      Serial.println("tempo_inicial: " + String(tempo_inicial));
+      Serial.println("tempo_verificacao: " + String(tempo_verificacao));
+      Serial.println("tempo_inicial + tempo_verificacao: " + String(tempo_verificacao + tempo_inicial));
+    #endif
+     
   if(tempo_inicial + tempo_verificacao <= millis()){
     if(status_chuva()){
       fn_blink(5);
@@ -46,7 +54,7 @@ void loop() {
     }
   } 
   
-  if(!digitalRead(pin_bt)){
+  if(!digitalRead(pin_bt)){ // Acionamento através do botão.
     fecha_janela();
     fn_blink(5);
   }
@@ -55,14 +63,29 @@ void loop() {
 bool status_chuva(){
     //função para verificar se o sensor de chuva foi ativado, 
     // faz 10 leituras e se a metade ou mais indicar chuva retorna verdadeiro.
-
+  String debug_status_chuva = "";
+    #ifdef DEBUG
+      if (digitalRead(pinChuva)){
+        String debug_status_chuva = "TRUE";
+      }else{
+        String debug_status_chuva = "FALSE";
+      }
+    
+      Serial.println("\n-----------------------------------");
+      Serial.println("digitalRead(pinChuva): " + debug_status_chuva);
+    #endif
+    
     for(int i = 0; i <= 10; i++ ){
         if (!digitalRead(pinChuva)){
             count_chuva++;
         } 
     }
 
-    if(count_chuva >= 5){
+    #ifdef DEBUG
+      Serial.println("count_chuva: " + String(count_chuva));
+    #endif
+
+  if(count_chuva >= 5){
         count_chuva = 0;
         return true;
     } else{
@@ -73,13 +96,31 @@ bool status_chuva(){
 
 void fecha_janela(){
     // Envia código do botão de fechar a janela
-    RF433Send.sendQuadState("11F0001Q1Q10FF0F0101");
-          Serial.println("FECHA!");
+//    RF433Send.sendQuadState("11F0001Q1Q10FF0F0101");
+    
+//    String codigoSinal = "11F0001Q1Q10FF0F0F0F"; //Botão Subir
+//    String codigoSinal = "11F0001Q1Q10FF0FFFFF"; //Botão Pausa
+//    String codigoSinal = "11F0001Q1Q10FF0F0101"; //Botão Descer
+    char* codigoSinal = "11F1111Q1Q11FF1F1111"; //Código de teste
+      
+    RF433Send.sendQuadState(codigoSinal);
+
+    #ifdef DEBUG
+      Serial.println("\n-----------------------------------");
+      Serial.println("*** Envia Sinal ***");
+      Serial.println("codigoSinal: " + String(codigoSinal));
+    #endif
 
 
 }
 
 void fn_blink(int qtd){
+  #ifdef DEBUG
+    Serial.println("\n-----------------------------------");
+    Serial.println("BLINK");
+    Serial.println("qtd: " + String(qtd));
+  #endif
+    
   int aux = 0;
   while (aux < qtd){
     if (blink_inicial + 150 <= millis()){
